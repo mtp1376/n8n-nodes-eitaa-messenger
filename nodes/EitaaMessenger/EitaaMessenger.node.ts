@@ -30,48 +30,11 @@ export class EitaaMessenger implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Message',
-						value: 'message',
-					},
-					{
 						name: 'Chat',
 						value: 'chat'
 					}
 				],
-				default: 'message',
-			},
-
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				displayOptions: {
-					show: {
-						resource: ['message'],
-					},
-				},
-				options: [
-					{
-						name: 'Send Document',
-						value: 'sendDocument',
-						description: 'Send a document',
-						action: 'Send a document',
-					},
-					{
-						name: 'Send Message',
-						value: 'sendMessage',
-						description: 'Send a text message',
-						action: 'Send a text message',
-					},
-					{
-						name: 'Send Photo',
-						value: 'sendPhoto',
-						description: 'Send a photo',
-						action: 'Send a photo message',
-					},
-				],
-				default: 'sendMessage',
+				default: 'chat',
 			},
 
 			{
@@ -97,6 +60,12 @@ export class EitaaMessenger implements INodeType {
 						description: 'Gets all participants in a channel, requires admin access',
 						action: 'Get participants of a channel',
 					},
+					{
+						name: 'Get Channel History',
+						value: 'getChannelHistory',
+						description: 'Gets the channel history',
+						action: 'Get message history of channel'
+					}
 				],
 				default: 'resolveUsername',
 			},
@@ -123,43 +92,12 @@ export class EitaaMessenger implements INodeType {
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['sendDocument', 'sendMessage', 'sendPhoto', 'getChannelParticipants'],
-						resource: ['chat', 'message'],
+						operation: ['getChannelParticipants', 'getChannelHistory'],
+						resource: ['chat'],
 					},
 				},
 				required: true,
 				description: 'Unique identifier for the target chat',
-			},
-
-			{
-				displayName: 'Binary Property',
-				name: 'binaryPropertyName',
-				type: 'string',
-				default: 'data',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['sendDocument', 'sendPhoto'],
-						resource: ['message'],
-					},
-				},
-				placeholder: '',
-				description: 'Name of the binary property that contains the data to upload',
-			},
-
-			{
-				displayName: 'Text',
-				name: 'text',
-				type: 'string',
-				required: true,
-				default: '',
-				displayOptions: {
-					show: {
-						operation: ['sendMessage'],
-						resource: ['message'],
-					},
-				},
-				description: 'Text of the message to be sent',
 			},
 		],
 	};
@@ -181,7 +119,6 @@ export class EitaaMessenger implements INodeType {
 					json: {
 						...res,
 					},
-					binary: {},
 					pairedItem: { item: i },
 				});
 			}
@@ -198,7 +135,6 @@ export class EitaaMessenger implements INodeType {
 							json: {
 								...u,
 							},
-							binary: {},
 							pairedItem: { item: i },
 						});
 					})
@@ -206,6 +142,19 @@ export class EitaaMessenger implements INodeType {
 					if (res.count < CHUNK_SIZE) break;
 					pageNo++;
 				}
+			}
+
+			if (operation === 'getChannelHistory') {
+				const channelId = this.getNodeParameter('chatId', i) as string;
+				const history = await client.getHistory(channelId, 'channel');
+				history.users.map((u: any) => {
+					returnData.push({
+						json: {
+							...u
+						},
+						pairedItem: { item: i }
+					})
+				})
 			}
 		}
 

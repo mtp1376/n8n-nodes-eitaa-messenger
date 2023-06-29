@@ -135,7 +135,7 @@ export class EitaaClient {
 		)
 		const response = await this.#wrapAndSendRequest(refreshTokenInput)
 		this.token = response.token;
-		console.log(this.token);
+		// console.log(this.token);
 		return response;
 	}
 
